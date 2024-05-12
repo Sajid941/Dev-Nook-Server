@@ -46,13 +46,12 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/search', async (req, res) => {
-            const text  = req.query.text
-            const cursor =  blogCollection.find({ $text: { $search: text } });
-            const result = await cursor.toArray();
-            res.send(result);
-        });
-
+        app.get('/search',async(req,res)=>{
+            const text = req.query.text;
+            const cursor = blogCollection.find({$text:{$search:text}})
+            const result = await cursor.toArray()
+            res.send(result)
+        })
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
