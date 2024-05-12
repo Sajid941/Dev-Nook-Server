@@ -16,7 +16,7 @@ const uri = `mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0.xwey
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
-        strict: true,
+        strict: false,
         deprecationErrors: true,
     }
 });
@@ -27,6 +27,7 @@ async function run() {
         const blogCollection = client.db('DevNookDB').collection('blogs')
         const wishlistCollection = client.db('DevNookDB').collection('wishlist')
         //Blogs collection
+        await blogCollection.createIndex({title:'text',short_description:'text'})
         app.post('/blogs', async(req,res)=>{
             const blogs = req.body;
             const result = await blogCollection.insertOne(blogs)
@@ -44,6 +45,13 @@ async function run() {
             const result = await wishlistCollection.insertOne(wishlistBlogs)
             res.send(result)
         })
+
+        app.get('/search', async (req, res) => {
+            const text  = req.query.text
+            const cursor =  blogCollection.find({ $text: { $search: text } });
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
