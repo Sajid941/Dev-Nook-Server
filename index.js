@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 const port = process.env.PORT || 3000;
@@ -27,31 +27,50 @@ async function run() {
         const blogCollection = client.db('DevNookDB').collection('blogs')
         const wishlistCollection = client.db('DevNookDB').collection('wishlist')
         //Blogs collection
-        await blogCollection.createIndex({title:'text',short_description:'text'})
-        app.post('/blogs', async(req,res)=>{
+        await blogCollection.createIndex({ title: 'text', short_description: 'text' })
+        app.post('/blogs', async (req, res) => {
             const blogs = req.body;
             const result = await blogCollection.insertOne(blogs)
             res.send(result)
         })
-        app.get('/blogs', async(req,res)=>{
-            const cursor =  blogCollection.find().sort({_id:-1})
+        app.get('/blogs', async (req, res) => {
+            const cursor = blogCollection.find().sort({ _id: -1 })
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
+        app.get('/blogs/:id',async(req,res)=>{
+            const id = req.params;
+            const query = {_id: new ObjectId(id)}
+            const result = await blogCollection.findOne(query)
+            res.send(result)
+        })
+
+        app.get('/search', async (req, res) => {
+            const text = req.query.text;
+            const cursor = blogCollection.find({ $text: { $search: text } })
             const result = await cursor.toArray()
             res.send(result)
         })
 
         //wishlist collection
-        app.post('/wishlist', async(req,res)=>{
+        app.post('/wishlist', async (req, res) => {
             const wishlistBlogs = req.body;
             const result = await wishlistCollection.insertOne(wishlistBlogs)
             res.send(result)
         })
 
-        app.get('/search',async(req,res)=>{
-            const text = req.query.text;
-            const cursor = blogCollection.find({$text:{$search:text}})
+        app.get('/wishlist', async (req, res) => {
+            let query = {}
+            if (req.query?.email) {
+                query = { user_email: req.query.email }
+            }
+            const cursor = wishlistCollection.find(query)
             const result = await cursor.toArray()
             res.send(result)
         })
+
+
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
