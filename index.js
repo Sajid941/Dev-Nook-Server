@@ -26,6 +26,7 @@ async function run() {
         // Blogs collections
         const blogCollection = client.db('DevNookDB').collection('blogs')
         const wishlistCollection = client.db('DevNookDB').collection('wishlist')
+        const commentCollection = client.db('DevNookDB').collection('comments')
         //Blogs collection
         await blogCollection.createIndex({ title: 'text', short_description: 'text' })
         app.post('/blogs', async (req, res) => {
@@ -52,6 +53,14 @@ async function run() {
             const result = await cursor.toArray()
             res.send(result)
         })
+
+        //comment collection 
+        app.post('/comments', async(req,res)=>{
+            const comment = req.body;
+            const result = await commentCollection.insertOne(comment)
+            res.send(result)
+        })
+
 
         //wishlist collection
         app.post('/wishlist', async (req, res) => {
