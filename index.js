@@ -46,6 +46,22 @@ async function run() {
             const result = await blogCollection.findOne(query)
             res.send(result)
         })
+        app.patch('/blogs/:id', async(req,res)=>{
+            const id = req.params
+            const blog = req.body
+            filter = {_id:new ObjectId(id)}
+            const updateDoc = {
+                $set:{
+                    title:blog.title,
+                    image:blog.image, 
+                    category:blog.category, 
+                    short_description:blog.short_description, 
+                    long_description:blog.long_description
+                }
+            }
+            const result = await blogCollection.updateOne(filter,updateDoc)
+            res.send(result)
+        })
 
         app.get('/search', async (req, res) => {
             const text = req.query.text;
@@ -58,6 +74,13 @@ async function run() {
         app.post('/comments', async(req,res)=>{
             const comment = req.body;
             const result = await commentCollection.insertOne(comment)
+            res.send(result)
+        })
+
+        app.get('/comments', async(req,res)=>{
+            const query = {id:req.query.id}
+            const cursor = commentCollection.find(query)
+            const result = await cursor.toArray()
             res.send(result)
         })
 
