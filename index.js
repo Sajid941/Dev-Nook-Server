@@ -102,6 +102,13 @@ async function run() {
             res.send(result)
         })
 
+        app.delete('/wishlist/:id', async(req,res)=>{
+            const id = req.params;
+            const filter = {_id: new ObjectId(id)}
+            const result = await wishlistCollection.deleteOne(filter)
+            res.send(result)
+        })
+
 
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
