@@ -1,6 +1,7 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser')
 const port = process.env.PORT || 3000;
 const app = express()
 var jwt = require('jsonwebtoken');
@@ -8,6 +9,7 @@ var jwt = require('jsonwebtoken');
 require('dotenv').config()
 
 //middleware
+app.use(cookieParser())
 app.use(cors({
     origin: ['http://localhost:5173'],
     credentials:true
@@ -15,6 +17,26 @@ app.use(cors({
 app.use(express.json())
 
 //Custom MiddleWare
+const logger = (req,res,next)=>{
+    console.log('log info:', req.method, req.host, req.url);
+    next()
+}
+
+const verifyUser=(req,res,next)=>{
+    const token = req.cookies.token
+    if(!token){
+        return res.status(401).send({message:"Unauthorized"})
+    }
+    jwt.verify(token,process.env.SECRET,(err,decoded)=>{
+        if(err){
+            return res.status(403).send({message:"Forbidden"})
+        }
+        else{
+            req.user = decoded
+            next()
+        }
+    })
+}
 
 
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0.xweyicz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -99,7 +121,10 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/wishlist', async (req, res) => {
+        app.get('/wishlist', logger, verifyUser,  async (req, res) => {
+            if(req.user.email !== req.query.email){
+                return res.status(401).send({message:"Unauthorized"})
+            }
             let query = {}
             if (req.query?.email) {
                 query = { user_email: req.query.email }
@@ -109,7 +134,7 @@ async function run() {
             res.send(result)
         })
 
-        app.delete('/wishlist/:id', async(req,res)=>{
+        app.delete('/wishlist/:id',async(req,res)=>{
             const id = req.params;
             const filter = {_id: new ObjectId(id)}
             const result = await wishlistCollection.deleteOne(filter)
@@ -120,7 +145,7 @@ async function run() {
         app.post('/jwt' , async(req,res)=>{
             const user = req.body
             const token = jwt.sign(user,process.env.SECRET, {
-                expiresIn:'1h'
+                expiresIn:'1s'
             })
             res
             .cookie('token',token,{
