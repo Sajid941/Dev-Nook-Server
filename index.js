@@ -3,11 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const port = process.env.PORT || 3000;
 const app = express()
+var jwt = require('jsonwebtoken');
+
 require('dotenv').config()
 
 //middleware
-app.use(cors())
+app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials:true
+}))
 app.use(express.json())
+
+//Custom MiddleWare
 
 
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASS}@cluster0.xweyicz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -109,6 +116,25 @@ async function run() {
             res.send(result)
         })
 
+        //JWT
+        app.post('/jwt' , async(req,res)=>{
+            const user = req.body
+            const token = jwt.sign(user,process.env.SECRET, {
+                expiresIn:'1h'
+            })
+            res
+            .cookie('token',token,{
+                httpOnly:true,
+                sameSite:true,
+                secure:false
+            })
+            .send({success:true})
+        })
+        app.post('/logout' , async(req,res)=>{
+            const user = req.body
+            res.clearCookie('token',{maxAge:0}).send({success:true})
+        })
+        
 
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
